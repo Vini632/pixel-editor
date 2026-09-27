@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Pixel Editor 16x16 v2 — PC</title>
+<title>Pixel Editor — PC</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -23,24 +23,45 @@
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{
-  background:var(--bg); color:var(--ink);
+  background:var(--bg);
+  color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  display:flex; flex-direction:column; align-items:center; padding:24px; gap:16px;
+  display:flex; flex-direction:column; align-items:center; padding:24px; gap:18px;
 }
-h1{font-size:15px; font-weight:700; letter-spacing:.02em; margin:0; text-transform:uppercase; color:var(--sub)}
+.topbar{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  max-width:1040px; width:100%;
+}
+.brand{display:flex; align-items:center; gap:10px}
+.brand-name{font-size:16px; font-weight:700; letter-spacing:-.01em}
+.brand-sub{font-size:11px; color:var(--sub); text-transform:uppercase; letter-spacing:.08em; margin-top:1px}
+.asset-name{
+  font-size:12px; color:var(--sub); background:var(--panel); border:1px solid var(--line);
+  border-radius:20px; padding:5px 12px; display:inline-flex; align-items:center; gap:6px;
+}
+.asset-name b{color:var(--ink); font-weight:700}
+.btn-primary{
+  background:var(--accent); color:var(--accent-ink); border:1px solid var(--accent);
+  border-radius:10px; padding:10px 16px; font-size:13px; font-weight:700; cursor:pointer;
+  transition:opacity .12s ease;
+}
+.btn-primary:hover{opacity:.88}
 .layout{display:flex; gap:18px; align-items:flex-start; max-width:1040px; width:100%}
 .left{display:flex; flex-direction:column; gap:14px; flex:0 0 auto}
 .right{display:flex; flex-direction:column; gap:14px; flex:1 1 320px; min-width:280px}
-.panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px}
+.panel{
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px;
+}
 #stageRow{display:flex; gap:14px}
 canvas#grid{
-  image-rendering:pixelated; border-radius:6px; cursor:crosshair; display:block;
+  image-rendering:pixelated; border-radius:8px; cursor:crosshair; display:block;
+  box-shadow:inset 0 0 0 1px var(--line);
   background-image:
     linear-gradient(45deg,#0000 25%,rgba(120,120,120,.18) 25%,rgba(120,120,120,.18) 50%,#0000 50%,#0000 75%,rgba(120,120,120,.18) 75%);
 }
 #refBox{
   display:flex; align-items:center; justify-content:center; overflow:hidden;
-  border-radius:6px; border:1px dashed var(--line); background:var(--bg);
+  border-radius:8px; border:1px dashed var(--line); background:var(--bg);
 }
 #refBox img{width:100%; height:100%; object-fit:contain}
 #refBox.empty{display:none}
@@ -65,6 +86,7 @@ canvas#grid{
 button{
   border:1px solid var(--line); background:var(--bg); color:var(--ink);
   border-radius:10px; padding:9px 12px; font-size:13px; font-weight:600; cursor:pointer;
+  transition:border-color .12s ease;
 }
 button:hover{border-color:var(--accent)}
 button.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
@@ -72,6 +94,7 @@ button.wide{flex:1}
 .filebtn{
   border:1px solid var(--line); background:var(--bg); color:var(--ink);
   border-radius:10px; padding:9px 12px; font-size:13px; font-weight:600; cursor:pointer; display:inline-block;
+  transition:border-color .12s ease;
 }
 .filebtn:hover{border-color:var(--accent)}
 .sub{font-size:11px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em; margin:0 0 8px}
@@ -81,11 +104,78 @@ kbd{
 }
 .shortcuts{display:grid; grid-template-columns:auto 1fr; gap:6px 10px; font-size:12px; color:var(--sub)}
 footer{font-size:11px; color:var(--sub); text-align:center}
+
+.modal-overlay{
+  display:none; position:fixed; inset:0; background:rgba(10,8,6,.55);
+  align-items:center; justify-content:center; z-index:50; padding:20px;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:22px;
+  width:100%; max-width:360px; box-shadow:0 12px 32px -12px rgba(0,0,0,.3);
+}
+.modal h2{font-size:16px; margin:0 0 4px; font-weight:800}
+.modal p.hint{font-size:12px; color:var(--sub); margin:0 0 16px}
+.modal label.field-label{font-size:11px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em; display:block; margin-bottom:6px}
+.modal input[type=text]{
+  width:100%; border:1px solid var(--line); background:var(--bg); color:var(--ink);
+  border-radius:10px; padding:10px 12px; font-size:14px; margin-bottom:16px;
+}
+.size-chip-row{display:flex; gap:8px; margin-bottom:20px}
+.size-chip{
+  flex:1; border:1px solid var(--line); background:var(--bg); color:var(--ink);
+  border-radius:10px; padding:10px 8px; font-size:13px; font-weight:700; text-align:center; cursor:pointer;
+}
+.size-chip.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.modal-actions{display:flex; gap:8px; justify-content:flex-end}
+.btn-ghost{background:var(--bg); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer}
 </style>
 </head>
 <body>
-<h1>Pixel Editor · 16×16 · Godot (PC) · v2</h1>
-<button id="installBtn" style="display:none; border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:10px; padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer;">Instalar app no PC</button>
+
+<div class="topbar">
+  <div class="brand">
+    <svg width="30" height="30" viewBox="0 0 16 16" style="border-radius:7px" shape-rendering="crispEdges">
+      <rect width="16" height="16" fill="#171513"/>
+      <rect x="6" y="1" width="4" height="1" fill="#2a1512"/>
+      <rect x="4" y="2" width="8" height="1" fill="#d6362c"/>
+      <rect x="4" y="3" width="2" height="1" fill="#d6362c"/><rect x="6" y="3" width="2" height="1" fill="#fff4e3"/><rect x="8" y="3" width="2" height="1" fill="#d6362c"/><rect x="10" y="3" width="2" height="1" fill="#d6362c"/>
+      <rect x="3" y="4" width="10" height="2" fill="#d6362c"/>
+      <rect x="3" y="6" width="10" height="1" fill="#2a1512"/>
+      <rect x="5" y="7" width="6" height="4" fill="#ffdea3"/>
+      <rect x="5" y="11" width="6" height="1" fill="#2a1512"/>
+    </svg>
+    <div>
+      <div class="brand-name">Pixel Editor</div>
+      <div class="brand-sub">Sprites para Godot</div>
+    </div>
+  </div>
+  <div class="row" style="gap:10px">
+    <span class="asset-name">Editando: <b id="assetNameLabel">sem nome</b></span>
+    <button id="installBtn" style="display:none; border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:10px; padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer;">Instalar app no PC</button>
+    <button class="btn-primary" id="newAssetBtn">+ Criar novo asset</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="newAssetModal">
+  <div class="modal">
+    <h2>Criar novo asset</h2>
+    <p class="hint">Isso substitui o que está na tela agora por um sprite novo em branco.</p>
+    <label class="field-label" for="newAssetName">Nome do asset</label>
+    <input type="text" id="newAssetName" placeholder="ex: player_idle" maxlength="40">
+    <label class="field-label">Tamanho</label>
+    <div class="size-chip-row">
+      <div class="size-chip active" data-size="16">16×16</div>
+      <div class="size-chip" data-size="32">32×32</div>
+      <div class="size-chip" data-size="64">64×64</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cancelNewAsset">Cancelar</button>
+      <button class="btn-primary" id="confirmNewAsset">Criar</button>
+    </div>
+  </div>
+</div>
+
 <div class="layout">
 
   <div class="left">
@@ -113,6 +203,14 @@ footer{font-size:11px; color:var(--sub); text-align:center}
         <kbd>O</kbd><span>Elipse</span>
         <kbd>Ctrl+Z</kbd><span>Desfazer</span>
         <kbd>Ctrl+X</kbd><span>Refazer</span>
+        <kbd>M</kbd><span>Espelho horizontal</span>
+        <kbd>Shift+M</kbd><span>Espelho vertical</span>
+        <kbd>H</kbd><span>Flip horizontal</span>
+        <kbd>Shift+H</kbd><span>Flip vertical</span>
+        <kbd>T</kbd><span>Rotacionar 90°</span>
+        <kbd>1 2 3</kbd><span>Tamanho do pincel</span>
+        <kbd>[ ]</kbd><span>Zoom</span>
+        <kbd>'</kbd><span>Alternar grade</span>
         <kbd>Clique direito</kbd><span>Apaga direto</span>
         <kbd>Scroll no canvas</kbd><span>Zoom</span>
       </div>
@@ -203,7 +301,7 @@ footer{font-size:11px; color:var(--sub); text-align:center}
     <div class="panel">
       <p class="sub">Exportar</p>
       <div class="row">
-        <button id="exportNative" class="wide">Baixar 16×16 (nativo)</button>
+        <button id="exportNative" class="wide">Baixar nativo</button>
         <button id="exportBig" class="wide">Baixar 8× (visualização)</button>
       </div>
     </div>
@@ -213,11 +311,12 @@ footer{font-size:11px; color:var(--sub); text-align:center}
 <footer>Clique e arraste para desenhar · o PNG sai transparente, pronto pra importar como sprite no Godot · seu progresso é salvo automaticamente no navegador<br>Se o botão "Instalar app" não aparecer, use o ícone de instalação na barra de endereço do Chrome/Edge (à direita, perto da URL)</footer>
 
 <script>
-const N = 16;
+let N = 16;
 const grid = document.getElementById('grid');
 const ctx = grid.getContext('2d');
 let cell = 32;
-const ZOOM_MIN = 12, ZOOM_MAX = 56;
+const ZOOM_MIN = 4, ZOOM_MAX = 56;
+function defaultCell(n){ return n<=16 ? 32 : n<=32 ? 16 : 8; }
 let showGrid = true;
 let px = new Array(N*N).fill(null);
 let history = [];
@@ -233,6 +332,50 @@ function setCanvasSize(){
   sizeRefBox();
   draw();
 }
+
+let assetName = '';
+
+function updateAssetLabel(){
+  document.getElementById('assetNameLabel').textContent = assetName || 'sem nome';
+}
+
+function createNewAsset(name, newN){
+  N = newN;
+  assetName = name;
+  history = []; redoStack = [];
+  cell = defaultCell(N);
+  px = new Array(N*N).fill(null);
+  updateAssetLabel();
+  setCanvasSize();
+  saveState();
+}
+
+/* modal: criar novo asset */
+const modal = document.getElementById('newAssetModal');
+const newAssetNameInput = document.getElementById('newAssetName');
+let modalSize = 16;
+document.getElementById('newAssetBtn').onclick = ()=>{
+  newAssetNameInput.value = assetName;
+  modalSize = N;
+  document.querySelectorAll('.size-chip').forEach(c=>c.classList.toggle('active', Number(c.dataset.size)===modalSize));
+  modal.classList.add('open');
+  newAssetNameInput.focus();
+};
+document.getElementById('cancelNewAsset').onclick = ()=> modal.classList.remove('open');
+modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.classList.remove('open'); });
+document.querySelectorAll('.size-chip').forEach(chip=>{
+  chip.onclick = ()=>{
+    modalSize = Number(chip.dataset.size);
+    document.querySelectorAll('.size-chip').forEach(c=>c.classList.toggle('active', c===chip));
+  };
+});
+document.getElementById('confirmNewAsset').onclick = ()=>{
+  const hasContent = px.some(c=>c);
+  if(hasContent && !confirm('Isso substitui o sprite atual na tela por um em branco. Continuar?')) return;
+  const name = newAssetNameInput.value.trim() || 'sem_nome';
+  createNewAsset(name, modalSize);
+  modal.classList.remove('open');
+};
 
 function draw(){
   ctx.clearRect(0,0,grid.width,grid.height);
@@ -449,36 +592,54 @@ function doRedo(){ if(redoStack.length){ history.push(px.slice()); px=redoStack.
 document.getElementById('clearBtn').onclick=()=>{
   pushHistory(); px=new Array(N*N).fill(null); draw(); saveState();
 };
-document.getElementById('gridBtn').onclick=(e)=>{
-  showGrid=!showGrid; e.target.classList.toggle('active', showGrid); draw();
-};
+function doGridToggle(){
+  showGrid=!showGrid;
+  document.getElementById('gridBtn').classList.toggle('active', showGrid);
+  draw();
+}
+document.getElementById('gridBtn').onclick=doGridToggle;
 
-document.getElementById('flipHBtn').onclick=()=>{
+function doFlipH(){
   pushHistory();
   const next=px.slice();
   for(let y=0;y<N;y++) for(let x=0;x<N;x++) next[y*N+x]=px[y*N+(N-1-x)];
   px=next; draw(); saveState();
-};
-document.getElementById('flipVBtn').onclick=()=>{
+}
+function doFlipV(){
   pushHistory();
   const next=px.slice();
   for(let y=0;y<N;y++) for(let x=0;x<N;x++) next[y*N+x]=px[(N-1-y)*N+x];
   px=next; draw(); saveState();
-};
-document.getElementById('rotateBtn').onclick=()=>{
+}
+function doRotate(){
   pushHistory();
   const next=px.slice();
   for(let y=0;y<N;y++) for(let x=0;x<N;x++) next[y*N+x]=px[(N-1-x)*N+y];
   px=next; draw(); saveState();
-};
+}
+document.getElementById('flipHBtn').onclick=doFlipH;
+document.getElementById('flipVBtn').onclick=doFlipV;
+document.getElementById('rotateBtn').onclick=doRotate;
 
 window.addEventListener('keydown', e=>{
   const tag = document.activeElement.tagName;
   if(tag==='INPUT' || tag==='TEXTAREA') return;
   if(e.ctrlKey && e.key.toLowerCase()==='z'){ e.preventDefault(); doUndo(); return; }
   if(e.ctrlKey && e.key.toLowerCase()==='x'){ e.preventDefault(); doRedo(); return; }
-  const map = {b:'pencil', e:'eraser', g:'fill', i:'eyedrop', l:'line', r:'rect', o:'ellipse'};
   const k = e.key.toLowerCase();
+
+  if(k==='m'){
+    const btn = e.shiftKey ? document.getElementById('symY') : document.getElementById('symX');
+    btn.click(); return;
+  }
+  if(k==='h'){ e.shiftKey ? doFlipV() : doFlipH(); return; }
+  if(k==='t'){ doRotate(); return; }
+  if(k==='`' || k==="'"){ doGridToggle(); return; }
+  if(k==='['){ cell=Math.max(ZOOM_MIN,cell-4); setCanvasSize(); return; }
+  if(k===']'){ cell=Math.min(ZOOM_MAX,cell+4); setCanvasSize(); return; }
+  if(['1','2','3'].includes(k)){ document.getElementById('brush-'+k).click(); return; }
+
+  const map = {b:'pencil', e:'eraser', g:'fill', i:'eyedrop', l:'line', r:'rect', o:'ellipse'};
   if(map[k]){ tool=map[k]; setToolButtons(); }
 });
 
@@ -651,17 +812,36 @@ importFile.addEventListener('change', ()=>{
 });
 
 /* ---- autosave local ---- */
-const SAVE_KEY = 'pixelEditor16x16_state';
+const SAVE_KEY_PREFIX = 'pixelEditor_state_';
+const LAST_ASSET_KEY = 'pixelEditor_lastAsset';
 function saveState(){
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(px)); }catch(e){}
+  try{
+    localStorage.setItem(SAVE_KEY_PREFIX+N, JSON.stringify({name: assetName, px}));
+    localStorage.setItem(LAST_ASSET_KEY, String(N));
+  }catch(e){}
 }
 function loadState(){
   try{
-    const raw = localStorage.getItem(SAVE_KEY);
-    if(raw){ const arr = JSON.parse(raw); if(Array.isArray(arr) && arr.length===N*N) px = arr; }
+    const raw = localStorage.getItem(SAVE_KEY_PREFIX+N);
+    if(raw){
+      const data = JSON.parse(raw);
+      if(data && Array.isArray(data.px) && data.px.length===N*N){
+        px = data.px;
+        assetName = data.name || '';
+      }
+    }
   }catch(e){}
 }
-loadState();
+(function initAsset(){
+  try{
+    const lastN = Number(localStorage.getItem(LAST_ASSET_KEY));
+    if([16,32,64].includes(lastN)) N = lastN;
+  }catch(e){}
+  cell = defaultCell(N);
+  px = new Array(N*N).fill(null);
+  loadState();
+  updateAssetLabel();
+})();
 
 async function exportPNG(scale, filename){
   const out = document.createElement('canvas');
@@ -687,8 +867,9 @@ async function exportPNG(scale, filename){
     setTimeout(()=>URL.revokeObjectURL(url), 2000);
   }, 'image/png');
 }
-document.getElementById('exportNative').onclick=()=>exportPNG(1,'sprite_16x16.png');
-document.getElementById('exportBig').onclick=()=>exportPNG(8,'sprite_16x16_x8.png');
+function exportBaseName(){ return (assetName || 'sprite').replace(/[^a-z0-9_\-]+/gi,'_'); }
+document.getElementById('exportNative').onclick=()=>exportPNG(1,`${exportBaseName()}_${N}x${N}.png`);
+document.getElementById('exportBig').onclick=()=>exportPNG(8,`${exportBaseName()}_${N}x${N}_x8.png`);
 
 setCanvasSize();
 
