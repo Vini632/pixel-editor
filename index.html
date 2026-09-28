@@ -2,7 +2,23 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Pixel Editor — PC</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixel Editor</title>
+<script>
+/* Detecção de dispositivo: ?v=mobile / ?v=pc força a versão; senão detecta sozinho */
+(function(){
+  var saved = null;
+  try{ saved = localStorage.getItem('pixelEditor_device'); }catch(e){}
+  var m = location.search.match(/[?&]v=(mobile|pc)/);
+  if(m){ saved = m[1]==='pc' ? 'desktop' : 'mobile'; try{ localStorage.setItem('pixelEditor_device', saved); }catch(e){} }
+  var ua = navigator.userAgent || '';
+  var uad = navigator.userAgentData && navigator.userAgentData.mobile;
+  var ipad = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+  var auto = (uad || ipad || /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua)) ? 'mobile' : 'desktop';
+  document.documentElement.dataset.auto = auto;
+  document.documentElement.dataset.device = saved || auto;
+})();
+</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -64,8 +80,8 @@ input[type=range]{accent-color:var(--accent)}
 .tabs .tab{border:none;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--sub);padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer}
 .tabs .tab:hover{border-color:transparent;border-bottom-color:var(--line);color:var(--ink)}
 .tabs .tab.active{background:none;color:var(--ink);border-color:transparent;border-bottom-color:var(--accent)}
-body[data-view="paint"] [data-tab="anim"]{display:none !important}
-body[data-view="anim"] [data-tab="paint"]{display:none !important}
+html:not([data-device="mobile"]) body[data-view="paint"] [data-tab="anim"]{display:none !important}
+html:not([data-device="mobile"]) body[data-view="anim"] [data-tab="paint"]{display:none !important}
 details.tutorial summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.06em}
 details.tutorial ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:var(--sub);line-height:1.7}
 details.tutorial li b{color:var(--ink)}
@@ -157,6 +173,59 @@ footer{font-size:11px; color:var(--sub); text-align:center}
 .size-chip.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
 .modal-actions{display:flex; gap:8px; justify-content:flex-end}
 .btn-ghost{background:var(--bg); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer}
+canvas#grid,#svCanvas,#hueCanvas{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.mobile-only,.mnav,.mquick,.lbl-short{display:none}
+.linkbtn{background:none;border:none;color:var(--accent);padding:2px 4px;font-size:11px;text-decoration:underline;cursor:pointer}
+
+/* ---------- versão mobile ---------- */
+html[data-device="mobile"] body{padding:10px 10px calc(78px + env(safe-area-inset-bottom,0px));gap:10px;overflow-x:hidden}
+html[data-device="mobile"] .desktop-only,
+html[data-device="mobile"] .tabs,
+html[data-device="mobile"] .asset-name,
+html[data-device="mobile"] .brand-sub,
+html[data-device="mobile"] .zoomRow,
+html[data-device="mobile"] #refBox,
+html[data-device="mobile"] #refModeSide,
+html[data-device="mobile"] footer{display:none !important}
+html[data-device="mobile"] .lbl-full{display:none}
+html[data-device="mobile"] .lbl-short{display:inline}
+html[data-device="mobile"] .topbar{gap:8px}
+html[data-device="mobile"] .layout{flex-direction:column;align-items:stretch;gap:10px}
+html[data-device="mobile"] .left,
+html[data-device="mobile"] .right{display:contents}
+html[data-device="mobile"] .panel{padding:12px}
+html[data-device="mobile"] .panel:not(.canvas-panel){display:none}
+html[data-device="mobile"] .canvas-panel{order:-1;padding:10px;z-index:20}
+html[data-device="mobile"] #stageRow{justify-content:center}
+html[data-device="mobile"] body[data-group="tools"] .panel[data-group="tools"],
+html[data-device="mobile"] body[data-group="color"] .panel[data-group="color"],
+html[data-device="mobile"] body[data-group="layers"] .panel[data-group="layers"],
+html[data-device="mobile"] body[data-group="anim"] .panel[data-group="anim"],
+html[data-device="mobile"] body[data-group="more"] .panel[data-group="more"]{display:block}
+html[data-device="mobile"] .mquick{display:flex;gap:6px;margin-top:8px}
+html[data-device="mobile"] .mquick button{flex:1;padding:8px 2px;font-size:12px}
+html[data-device="mobile"] .mnav{
+  display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;gap:4px;
+  background:var(--panel);border-top:1px solid var(--line);
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));
+}
+html[data-device="mobile"] .mnav button{flex:1;border:none;background:none;color:var(--sub);padding:10px 2px;font-size:12px;font-weight:700;border-radius:8px}
+html[data-device="mobile"] .mnav button.active{background:rgba(232,98,44,.12);color:var(--accent)}
+html[data-device="mobile"] button,
+html[data-device="mobile"] .filebtn{min-height:40px}
+html[data-device="mobile"] input[type=text],
+html[data-device="mobile"] input[type=number]{font-size:16px}
+html[data-device="mobile"] .picker-wrap{width:100%;align-items:stretch}
+html[data-device="mobile"] #svCanvas{width:100%;max-width:none;height:170px}
+html[data-device="mobile"] #hueCanvas{width:100%;height:30px;margin-top:12px}
+html[data-device="mobile"] .swatch{width:34px;height:34px}
+html[data-device="mobile"] .layer-row{padding:10px}
+html[data-device="mobile"] .modal{max-width:none}
+html[data-device="mobile"] .mobile-only.panel{display:none}
+html[data-device="mobile"] body[data-group="more"] .mobile-only.panel{display:block}
+@media (min-height:700px){
+  html[data-device="mobile"] .canvas-panel{position:sticky;top:0}
+}
 </style>
 </head>
 <body>
@@ -181,7 +250,7 @@ footer{font-size:11px; color:var(--sub); text-align:center}
   <div class="row" style="gap:10px">
     <span class="asset-name">Editando: <b id="assetNameLabel">sem nome</b></span>
     <button id="installBtn" style="display:none; border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:10px; padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer;">Instalar app no PC</button>
-    <button class="btn-primary" id="newAssetBtn">+ Criar novo asset</button>
+    <button class="btn-primary" id="newAssetBtn"><span class="lbl-full">+ Criar novo asset</span><span class="lbl-short">+ Novo</span></button>
   </div>
 </div>
 
@@ -212,7 +281,7 @@ footer{font-size:11px; color:var(--sub); text-align:center}
 <div class="layout">
 
   <div class="left">
-    <div class="panel">
+    <div class="panel canvas-panel">
       <div id="stageRow">
         <div id="canvasWrap">
           <img id="refOverlay" alt="">
@@ -226,6 +295,14 @@ footer{font-size:11px; color:var(--sub); text-align:center}
         <button id="zoomIn">+</button>
       </div>
       <p class="hint" id="docStatus" style="text-align:center"></p>
+      <div class="mquick">
+        <button data-tool="pencil">Lápis</button>
+        <button data-tool="eraser">Borracha</button>
+        <button data-tool="fill">Balde</button>
+        <button data-tool="eyedrop">Gotas</button>
+        <button id="mqUndo" aria-label="Desfazer">↶</button>
+        <button id="mqRedo" aria-label="Refazer">↷</button>
+      </div>
     </div>
 
     <details class="panel tutorial" data-tab="paint" data-key="paint" open>
@@ -447,6 +524,12 @@ footer{font-size:11px; color:var(--sub); text-align:center}
       </div>
     </div>
 
+    <div class="panel mobile-only" data-group="more">
+      <p class="sub">Versão do app</p>
+      <p class="hint" id="deviceInfo" style="margin:0 0 10px"></p>
+      <button id="deviceBtn">Trocar para versão PC</button>
+    </div>
+
     <div class="panel" data-tab="paint">
       <p class="sub">Exportar</p>
       <div class="row">
@@ -457,7 +540,14 @@ footer{font-size:11px; color:var(--sub); text-align:center}
   </div>
 
 </div>
-<footer>Clique e arraste para desenhar · o PNG sai transparente, pronto pra importar como sprite no Godot · seu progresso é salvo automaticamente no navegador<br>Se o botão "Instalar app" não aparecer, use o ícone de instalação na barra de endereço do Chrome/Edge (à direita, perto da URL)</footer>
+<nav class="mnav" id="mnav">
+  <button data-group="tools" class="active">Ferramentas</button>
+  <button data-group="color">Cor</button>
+  <button data-group="layers">Camadas</button>
+  <button data-group="anim">Animar</button>
+  <button data-group="more">Mais</button>
+</nav>
+<footer class="desktop-only">Clique e arraste para desenhar · o PNG sai transparente, pronto pra importar como sprite no Godot · seu progresso é salvo automaticamente no navegador<br>Se o botão "Instalar app" não aparecer, use o ícone de instalação na barra de endereço do Chrome/Edge (à direita, perto da URL)<br><button class="linkbtn" id="deviceBtnDesk">Ver versão mobile</button></footer>
 
 <script>
 let N = 16;
@@ -465,7 +555,14 @@ const grid = document.getElementById('grid');
 const ctx = grid.getContext('2d');
 let cell = 32;
 const ZOOM_MIN = 4, ZOOM_MAX = 56;
-function defaultCell(n){ return n<=16 ? 32 : n<=32 ? 16 : 8; }
+function isMobile(){ return document.documentElement.dataset.device==='mobile'; }
+function defaultCell(n){
+  if(isMobile()){
+    const avail = Math.min(window.innerWidth, 720) - 44;
+    return Math.max(4, Math.floor(avail/n));
+  }
+  return n<=16 ? 32 : n<=32 ? 16 : 8;
+}
 let showGrid = true;
 let layers = [{name:'Camada 1', visible:true}];
 let frames = [{cels:[new Array(N*N).fill(null)]}]; // cada frame tem 1 "cel" (array de pixels) por camada
@@ -720,7 +817,9 @@ function drawWithPreview(pts){
 const SHAPE_TOOLS = ['line','rect','ellipse'];
 
 grid.addEventListener('contextmenu', e=>e.preventDefault());
-grid.addEventListener('mousedown', e=>{
+grid.addEventListener('pointerdown', e=>{
+  if(e.isPrimary===false) return;
+  e.preventDefault();
   const c = coordsFromEvent(e);
   if(!c) return;
   forceErase = (e.button===2);
@@ -735,8 +834,9 @@ grid.addEventListener('mousedown', e=>{
     applyAt(c.x,c.y);
   }
 });
-window.addEventListener('mousemove', e=>{
+window.addEventListener('pointermove', e=>{
   if(!painting) return;
+  if(e.pointerType==='touch') e.preventDefault();
   const c = coordsFromEvent(e);
   if(!c) return;
   if(SHAPE_TOOLS.includes(tool) && dragStart){
@@ -749,7 +849,7 @@ window.addEventListener('mousemove', e=>{
   const activeTool = forceErase ? 'eraser' : tool;
   if(activeTool==='pencil'||activeTool==='eraser') applyAt(c.x,c.y);
 });
-window.addEventListener('mouseup', ()=>{
+function endStroke(){
   if(painting && SHAPE_TOOLS.includes(tool) && shapePreview){
     commitShapePoints(shapePreview);
   }
@@ -759,7 +859,9 @@ window.addEventListener('mouseup', ()=>{
   }
   painting=false; forceErase=false; dragStart=null; shapePreview=null;
   draw();
-});
+}
+window.addEventListener('pointerup', endStroke);
+window.addEventListener('pointercancel', endStroke);
 
 grid.addEventListener('wheel', e=>{
   e.preventDefault();
@@ -770,6 +872,7 @@ document.getElementById('zoomIn').onclick=()=>{ cell=Math.min(ZOOM_MAX,cell+4); 
 document.getElementById('zoomOut').onclick=()=>{ cell=Math.max(ZOOM_MIN,cell-4); setCanvasSize(); };
 
 function setToolButtons(){
+  document.querySelectorAll('.mquick [data-tool]').forEach(b=>b.classList.toggle('active', b.dataset.tool===tool));
   ['pencil','eraser','fill','eyedrop','line','rect','ellipse'].forEach(t=>{
     document.getElementById('t-'+t).classList.toggle('active', t===tool);
   });
@@ -946,15 +1049,16 @@ function svPointFromEvent(e,canvas){
   return {x,y};
 }
 let svDrag=false, hueDrag=false;
-svCanvas.addEventListener('mousedown',e=>{svDrag=true; handleSV(e);});
-window.addEventListener('mousemove',e=>{ if(svDrag) handleSV(e); if(hueDrag) handleHue(e); });
-window.addEventListener('mouseup',()=>{svDrag=false; hueDrag=false;});
+svCanvas.addEventListener('pointerdown',e=>{svDrag=true; handleSV(e);});
+window.addEventListener('pointermove',e=>{ if(svDrag) handleSV(e); if(hueDrag) handleHue(e); });
+window.addEventListener('pointerup',()=>{svDrag=false; hueDrag=false;});
+window.addEventListener('pointercancel',()=>{svDrag=false; hueDrag=false;});
 function handleSV(e){
   const p=svPointFromEvent(e,svCanvas);
   sat=p.x/svCanvas.width; val=1-p.y/svCanvas.height;
   drawSV(); syncColor();
 }
-hueCanvas.addEventListener('mousedown',e=>{hueDrag=true; handleHue(e);});
+hueCanvas.addEventListener('pointerdown',e=>{hueDrag=true; handleHue(e);});
 function handleHue(e){
   const p=svPointFromEvent(e,hueCanvas);
   hue=(p.x/hueCanvas.width)*360;
@@ -1118,6 +1222,12 @@ function loadState(){
 
 function saveCanvasPNG(canvas, filename){
   canvas.toBlob(async (blob)=>{
+    if(isMobile() && navigator.canShare){
+      try{
+        const file = new File([blob], filename, {type:'image/png'});
+        if(navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:filename}); return; }
+      }catch(err){ if(err && err.name==='AbortError') return; }
+    }
     let downloads = null;
     try{ downloads = await claude.use('downloads'); }catch(e){}
     if(downloads){
@@ -1332,7 +1442,7 @@ document.getElementById('exportSheet').onclick = ()=>{
 const docStatus = document.getElementById('docStatus');
 function updateStatus(){
   if(!docStatus) return;
-  docStatus.textContent = `Frame ${curFrame+1}/${frames.length} · Camada: ${layers[curLayer].name}`;
+  docStatus.textContent = (isMobile() ? (assetName||'sem nome')+' · ' : '') + `Frame ${curFrame+1}/${frames.length} · Camada: ${layers[curLayer].name}`;
 }
 function setView(v){
   document.body.dataset.view = v;
@@ -1348,9 +1458,59 @@ document.querySelectorAll('details.tutorial').forEach(d=>{
   });
 });
 
+/* ---- mobile: grupos, navegação, versão ---- */
+(function assignGroups(){
+  const G = {'Ferramenta':'tools','Simetria':'tools','Ações':'tools','Cor':'color','Paleta':'color','Camadas':'layers',
+    'Frames':'anim','Pré-visualização':'anim','Exportar animação':'anim',
+    'Imagem de referência':'more','Abrir imagem para editar':'more','Exportar':'more'};
+  document.querySelectorAll('.panel').forEach(p=>{
+    if(p.dataset.group) return;
+    const el = p.querySelector('.sub') || p.querySelector('summary');
+    const t = el ? el.textContent.trim() : '';
+    if(G[t]) p.dataset.group = G[t];
+    else if(p.classList.contains('tutorial')) p.dataset.group = 'more';
+  });
+})();
+function setGroup(g){
+  document.body.dataset.group = g;
+  document.querySelectorAll('#mnav button').forEach(b=>b.classList.toggle('active', b.dataset.group===g));
+}
+document.querySelectorAll('#mnav button').forEach(b=>{ b.onclick = ()=>setGroup(b.dataset.group); });
+document.querySelectorAll('.mquick [data-tool]').forEach(b=>{
+  b.onclick = ()=>document.getElementById('t-'+b.dataset.tool).click();
+});
+document.getElementById('mqUndo').onclick = ()=>doUndo();
+document.getElementById('mqRedo').onclick = ()=>doRedo();
+
+function updateDeviceUI(){
+  const dev = document.documentElement.dataset.device, auto = document.documentElement.dataset.auto;
+  const nome = d=>d==='mobile' ? 'Mobile' : 'PC';
+  document.getElementById('deviceInfo').textContent = `Detectado: ${nome(auto)} · Usando: ${nome(dev)}`;
+  document.getElementById('deviceBtn').textContent = dev==='mobile' ? 'Trocar para versão PC' : 'Trocar para versão Mobile';
+  document.getElementById('deviceBtnDesk').textContent = dev==='mobile' ? 'Ver versão PC' : 'Ver versão mobile';
+}
+function setDevice(dev){
+  document.documentElement.dataset.device = dev;
+  try{ localStorage.setItem('pixelEditor_device', dev); }catch(e){}
+  if(dev==='mobile' && refMode==='side') setRefMode('overlay');
+  cell = defaultCell(N);
+  setCanvasSize(); updateStatus(); updateDeviceUI();
+}
+function toggleDevice(){ setDevice(isMobile() ? 'desktop' : 'mobile'); }
+document.getElementById('deviceBtn').onclick = toggleDevice;
+document.getElementById('deviceBtnDesk').onclick = toggleDevice;
+window.addEventListener('resize', ()=>{
+  if(!isMobile()) return;
+  const cc = defaultCell(N);
+  if(cc!==cell){ cell = cc; setCanvasSize(); }
+});
+
 renderSwatches();
 renderLayers();
 renderFrames();
+setGroup('tools');
+updateDeviceUI();
+setToolButtons();
 setView('paint');
 
 setCanvasSize();
