@@ -53,6 +53,15 @@ body{
   background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px;
 }
 #stageRow{display:flex; gap:14px}
+#canvasWrap{position:relative; line-height:0; flex:0 0 auto}
+#canvasWrap canvas#grid{position:relative; z-index:1}
+#refOverlay{
+  position:absolute; inset:0; width:100%; height:100%; object-fit:contain;
+  z-index:0; pointer-events:none; opacity:.4; display:none; border-radius:8px;
+}
+input[type=range]{accent-color:var(--accent)}
+.alpha-row{display:flex; align-items:center; gap:10px; margin-top:12px}
+.alpha-row .val{font-size:12px; color:var(--sub); min-width:38px; text-align:right; font-family:monospace}
 canvas#grid{
   image-rendering:pixelated; border-radius:8px; cursor:crosshair; display:block;
   box-shadow:inset 0 0 0 1px var(--line);
@@ -181,7 +190,10 @@ footer{font-size:11px; color:var(--sub); text-align:center}
   <div class="left">
     <div class="panel">
       <div id="stageRow">
-        <canvas id="grid"></canvas>
+        <div id="canvasWrap">
+          <img id="refOverlay" alt="">
+          <canvas id="grid"></canvas>
+        </div>
         <div id="refBox" class="empty"><img id="refImg" alt="referência"></div>
       </div>
       <div class="zoomRow" style="margin-top:12px">
@@ -210,6 +222,8 @@ footer{font-size:11px; color:var(--sub); text-align:center}
         <kbd>T</kbd><span>Rotacionar 90°</span>
         <kbd>1 2 3</kbd><span>Tamanho do pincel</span>
         <kbd>[ ]</kbd><span>Zoom</span>
+        <kbd>, .</kbd><span>Opacidade da cor − / +</span>
+        <kbd>- =</kbd><span>Opacidade da referência − / +</span>
         <kbd>'</kbd><span>Alternar grade</span>
         <kbd>Clique direito</kbd><span>Apaga direto</span>
         <kbd>Scroll no canvas</kbd><span>Zoom</span>
@@ -275,6 +289,11 @@ footer{font-size:11px; color:var(--sub); text-align:center}
         <label>G<input type="number" id="gInput" min="0" max="255"></label>
         <label>B<input type="number" id="bInput" min="0" max="255"></label>
       </div>
+      <div class="alpha-row">
+        <span class="sub" style="margin:0">Opacidade</span>
+        <input type="range" id="alphaSlider" min="5" max="100" value="100" style="flex:1">
+        <span class="val" id="alphaLabel">100%</span>
+      </div>
     </div>
 
     <div class="panel">
@@ -284,9 +303,19 @@ footer{font-size:11px; color:var(--sub); text-align:center}
         <button id="refRemoveBtn">Remover</button>
         <input type="file" id="refFile" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden">
       </div>
-      <div class="row" style="margin-top:10px" id="refOpacityRow" hidden>
-        <span class="sub" style="margin:0">Opacidade</span>
-        <input type="range" id="refOpacity" min="10" max="100" value="100" style="flex:1">
+      <div id="refWarn" hidden style="margin-top:10px;padding:8px 10px;border-radius:8px;border:1px solid #d9a441;background:rgba(217,164,65,.12);color:var(--ink);font-size:12px"></div>
+      <div id="refControls" hidden>
+        <div class="row" style="margin-top:10px">
+          <button id="refModeOverlay" class="active">Sobre o canvas</button>
+          <button id="refModeSide">Ao lado</button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <span class="sub" style="margin:0">Opacidade</span>
+          <button id="refOpMinus" style="padding:5px 10px">–</button>
+          <input type="range" id="refOpacity" min="5" max="100" value="40" style="flex:1">
+          <button id="refOpPlus" style="padding:5px 10px">+</button>
+          <span class="val" id="refOpacityLabel" style="font-size:12px;color:var(--sub);min-width:38px;text-align:right;font-family:monospace">40%</span>
+        </div>
       </div>
     </div>
 
@@ -323,12 +352,38 @@ let history = [];
 let redoStack = [];
 let tool = 'pencil';
 let currentColor = '#e8622c';
+let colorAlpha = 100; // 5..100
+let strokeTouched = new Set();
+
+function parseColor(c){
+  if(!c) return null;
+  return {
+    r: parseInt(c.substr(1,2),16), g: parseInt(c.substr(3,2),16), b: parseInt(c.substr(5,2),16),
+    a: c.length>=9 ? parseInt(c.substr(7,2),16)/255 : 1
+  };
+}
+function toHex8(r,g,b,a){
+  const h = v=>('0'+Math.round(v).toString(16)).slice(-2);
+  return '#'+h(r)+h(g)+h(b)+(a>=0.999 ? '' : h(a*255));
+}
+// compõe "top" sobre "base" (base pode ser null = transparente)
+function blendColors(base, top){
+  const t = parseColor(top);
+  if(!t) return base;
+  if(t.a>=0.999 || !base) return top;
+  const b = parseColor(base);
+  const outA = t.a + b.a*(1-t.a);
+  if(outA<=0) return null;
+  const mix = (tc,bc)=>(tc*t.a + bc*b.a*(1-t.a))/outA;
+  return toHex8(mix(t.r,b.r), mix(t.g,b.g), mix(t.b,b.b), outA);
+}
 
 function setCanvasSize(){
   grid.width = cell*N; grid.height = cell*N;
   grid.style.width = cell*N+'px'; grid.style.height = cell*N+'px';
   grid.style.backgroundSize = cell+'px '+cell+'px';
   document.getElementById('zoomLabel').textContent = cell+'px';
+  if(typeof checkRefSize==='function') checkRefSize();
   sizeRefBox();
   draw();
 }
@@ -435,7 +490,12 @@ let shapePreview=null; // array of {x,y} while dragging a shape
 
 function setPixel(x,y,color){
   if(x<0||y<0||x>=N||y>=N) return;
-  px[y*N+x]=color;
+  const i=y*N+x;
+  if(color===null || color.length<9){ px[i]=color; return; }
+  // cor com transparência: mistura por cima do que já existe, uma vez por traço
+  if(strokeTouched.has(i)) return;
+  strokeTouched.add(i);
+  px[i]=blendColors(px[i], color);
 }
 function paintBrush(x,y,color){
   const r = Math.floor(brushSize/2);
@@ -489,13 +549,14 @@ function applyAt(x,y){
   else if(activeTool==='eyedrop'){
     const c = px[y*N+x];
     if(c){
-      currentColor=c;
+      const cc = parseColor(c);
+      colorAlpha = Math.max(5, Math.round(cc.a*100));
       const hsv=hexToHsv(c); hue=hsv.h; sat=hsv.s; val=hsv.v;
       refreshPicker();
     }
     tool='pencil'; setToolButtons(); return;
   }
-  else if(activeTool==='fill'){ floodFill(x,y,px[y*N+x],currentColor); }
+  else if(activeTool==='fill'){ const t=px[y*N+x]; floodFill(x,y,t,blendColors(t,currentColor)); }
   draw();
 }
 
@@ -526,6 +587,7 @@ grid.addEventListener('mousedown', e=>{
   if(!c) return;
   forceErase = (e.button===2);
   pushHistory();
+  strokeTouched = new Set();
   painting=true;
   if(SHAPE_TOOLS.includes(tool)){
     dragStart = c;
@@ -635,6 +697,10 @@ window.addEventListener('keydown', e=>{
   if(k==='h'){ e.shiftKey ? doFlipV() : doFlipH(); return; }
   if(k==='t'){ doRotate(); return; }
   if(k==='`' || k==="'"){ doGridToggle(); return; }
+  if(k==='-'){ bumpRef(-5); return; }
+  if(k==='='||k==='+'){ bumpRef(5); return; }
+  if(k===','){ bumpAlpha(-10); return; }
+  if(k==='.'){ bumpAlpha(10); return; }
   if(k==='['){ cell=Math.max(ZOOM_MIN,cell-4); setCanvasSize(); return; }
   if(k===']'){ cell=Math.min(ZOOM_MAX,cell+4); setCanvasSize(); return; }
   if(['1','2','3'].includes(k)){ document.getElementById('brush-'+k).click(); return; }
@@ -708,12 +774,23 @@ function drawSV(){
   svCtx.strokeStyle='#fff'; svCtx.lineWidth=2; svCtx.stroke();
   svCtx.strokeStyle='rgba(0,0,0,.4)'; svCtx.lineWidth=1; svCtx.stroke();
 }
+const alphaSlider = document.getElementById('alphaSlider');
+const alphaLabel = document.getElementById('alphaLabel');
 function syncColor(){
-  currentColor = hsvToHex(hue,sat,val);
-  swatchPreview.style.background = currentColor;
-  hexInput.value = currentColor;
-  const rgb = hexToRgb(currentColor);
+  const base = hsvToHex(hue,sat,val);
+  currentColor = colorAlpha>=100 ? base : base + ('0'+Math.round(colorAlpha*2.55).toString(16)).slice(-2);
+  swatchPreview.style.background =
+    `linear-gradient(${currentColor},${currentColor}), repeating-conic-gradient(#bbb 0% 25%, #fff 0% 50%) 50% / 12px 12px`;
+  hexInput.value = base;
+  const rgb = hexToRgb(base);
   rInput.value = rgb.r; gInput.value = rgb.g; bInput.value = rgb.b;
+  alphaSlider.value = colorAlpha;
+  alphaLabel.textContent = colorAlpha+'%';
+}
+alphaSlider.addEventListener('input', ()=>{ colorAlpha = Number(alphaSlider.value); syncColor(); });
+function bumpAlpha(delta){
+  colorAlpha = Math.min(100, Math.max(5, colorAlpha+delta));
+  syncColor();
 }
 function refreshPicker(){ drawHue(); drawSV(); syncColor(); }
 
@@ -740,7 +817,7 @@ function handleHue(e){
 }
 hexInput.addEventListener('change',()=>{
   let v=hexInput.value.trim();
-  if(!/^#?[0-9a-fA-F]{6}$/.test(v)){ hexInput.value=currentColor; return; }
+  if(!/^#?[0-9a-fA-F]{6}$/.test(v)){ hexInput.value=currentColor.slice(0,7); return; }
   if(v[0]!=='#') v='#'+v;
   const hsv=hexToHsv(v); hue=hsv.h; sat=hsv.s; val=hsv.v;
   refreshPicker();
@@ -759,23 +836,70 @@ refreshPicker();
 /* ---- reference image ---- */
 const refBox = document.getElementById('refBox');
 const refImg = document.getElementById('refImg');
+const refOverlay = document.getElementById('refOverlay');
 const refFile = document.getElementById('refFile');
-const refOpacityRow = document.getElementById('refOpacityRow');
+const refControls = document.getElementById('refControls');
+const refOpacity = document.getElementById('refOpacity');
+const refOpacityLabel = document.getElementById('refOpacityLabel');
+let refMode = 'overlay';
+let refLoaded = false;
+
+function applyRefMode(){
+  refOverlay.style.display = (refLoaded && refMode==='overlay') ? 'block' : 'none';
+  refBox.classList.toggle('empty', !(refLoaded && refMode==='side'));
+  document.getElementById('refModeOverlay').classList.toggle('active', refMode==='overlay');
+  document.getElementById('refModeSide').classList.toggle('active', refMode==='side');
+  const o = refOpacity.value/100;
+  refOverlay.style.opacity = o;
+  refImg.style.opacity = o;
+  refOpacityLabel.textContent = refOpacity.value+'%';
+  sizeRefBox();
+}
+function setRefMode(mode){
+  refMode = mode;
+  refOpacity.value = mode==='overlay' ? 40 : 100; // padrão de cada modo
+  applyRefMode();
+}
+let refW = 0, refH = 0;
+const refWarn = document.getElementById('refWarn');
+function checkRefSize(){
+  if(!refLoaded || !refW){ refWarn.hidden = true; return; }
+  const std = [16,32,64];
+  let msg = '';
+  if(refW===refH && std.includes(refW)){
+    if(refW!==N) msg = `Atenção: a referência é ${refW}×${refH}, mas o asset atual é ${N}×${N}.`;
+  } else {
+    msg = `Atenção: a referência é ${refW}×${refH}, que não corresponde a 16, 32 ou 64 (asset atual: ${N}×${N}).`;
+  }
+  refWarn.textContent = msg;
+  refWarn.hidden = !msg;
+}
+refImg.onload = ()=>{ refW = refImg.naturalWidth; refH = refImg.naturalHeight; checkRefSize(); };
 refFile.addEventListener('change',()=>{
   const f = refFile.files[0];
   if(!f) return;
   const url = URL.createObjectURL(f);
   refImg.src = url;
-  refBox.classList.remove('empty');
-  refOpacityRow.hidden = false;
-  sizeRefBox();
+  refOverlay.src = url;
+  refLoaded = true;
+  refControls.hidden = false;
+  applyRefMode();
 });
 document.getElementById('refRemoveBtn').onclick=()=>{
-  refImg.src=''; refBox.classList.add('empty'); refOpacityRow.hidden=true; refFile.value='';
+  refImg.removeAttribute('src'); refOverlay.removeAttribute('src');
+  refLoaded = false; refControls.hidden = true; refFile.value=''; refW = refH = 0; checkRefSize();
+  applyRefMode();
 };
-document.getElementById('refOpacity').oninput=(e)=>{
-  refImg.style.opacity = e.target.value/100;
-};
+document.getElementById('refModeOverlay').onclick=()=>setRefMode('overlay');
+document.getElementById('refModeSide').onclick=()=>setRefMode('side');
+refOpacity.oninput=()=>applyRefMode();
+function bumpRef(delta){
+  if(!refLoaded) return;
+  refOpacity.value = Math.min(100, Math.max(5, Number(refOpacity.value)+delta));
+  applyRefMode();
+}
+document.getElementById('refOpMinus').onclick=()=>bumpRef(-5);
+document.getElementById('refOpPlus').onclick=()=>bumpRef(5);
 function sizeRefBox(){
   refBox.style.width = grid.clientHeight+'px';
   refBox.style.height = grid.clientHeight+'px';
@@ -800,7 +924,7 @@ importFile.addEventListener('change', ()=>{
       const a = data[i*4+3];
       if(a>16){
         const r=data[i*4], g=data[i*4+1], b=data[i*4+2];
-        next[i]=rgbToHex(r,g,b);
+        next[i]= a>=250 ? rgbToHex(r,g,b) : rgbToHex(r,g,b)+('0'+a.toString(16)).slice(-2);
       }
     }
     px = next;
