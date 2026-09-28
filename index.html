@@ -60,6 +60,25 @@ body{
   z-index:0; pointer-events:none; opacity:.4; display:none; border-radius:8px;
 }
 input[type=range]{accent-color:var(--accent)}
+.tabs{display:flex;gap:4px;max-width:1040px;width:100%;border-bottom:1px solid var(--line);margin-top:-6px}
+.tabs .tab{border:none;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--sub);padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer}
+.tabs .tab:hover{border-color:transparent;border-bottom-color:var(--line);color:var(--ink)}
+.tabs .tab.active{background:none;color:var(--ink);border-color:transparent;border-bottom-color:var(--accent)}
+body[data-view="paint"] [data-tab="anim"]{display:none !important}
+body[data-view="anim"] [data-tab="paint"]{display:none !important}
+details.tutorial summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.06em}
+details.tutorial ol{margin:10px 0 0;padding-left:18px;font-size:12px;color:var(--sub);line-height:1.7}
+details.tutorial li b{color:var(--ink)}
+.layer-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:13px}
+.layer-row.active{border-color:var(--accent);background:rgba(232,98,44,.08)}
+.layer-row .lname{flex:1;user-select:none}
+.layer-row.hidden-layer .lname{opacity:.45}
+.layer-row button{padding:3px 8px;font-size:11px}
+.swatch-row{display:flex;flex-wrap:wrap;gap:5px;min-height:26px}
+.swatch{width:24px;height:24px;border-radius:6px;border:1px solid var(--line);cursor:pointer}
+.swatch:hover{border-color:var(--accent)}
+.hint{font-size:11px;color:var(--sub);margin:8px 0 0}
+#previewCanvas{width:128px;height:128px;image-rendering:pixelated;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
 .alpha-row{display:flex; align-items:center; gap:10px; margin-top:12px}
 .alpha-row .val{font-size:12px; color:var(--sub); min-width:38px; text-align:right; font-family:monospace}
 canvas#grid{
@@ -166,6 +185,11 @@ footer{font-size:11px; color:var(--sub); text-align:center}
   </div>
 </div>
 
+<div class="tabs" id="tabs">
+  <button class="tab active" data-view="paint">Desenhar</button>
+  <button class="tab" data-view="anim">Animação</button>
+</div>
+
 <div class="modal-overlay" id="newAssetModal">
   <div class="modal">
     <h2>Criar novo asset</h2>
@@ -201,9 +225,49 @@ footer{font-size:11px; color:var(--sub); text-align:center}
         <span id="zoomLabel">32px</span>
         <button id="zoomIn">+</button>
       </div>
+      <p class="hint" id="docStatus" style="text-align:center"></p>
     </div>
 
-    <div class="panel">
+    <details class="panel tutorial" data-tab="paint" data-key="paint" open>
+      <summary>Como usar · Desenhar</summary>
+      <ol>
+        <li>Clique em <b>+ Criar novo asset</b>, dê um nome e escolha 16, 32 ou 64.</li>
+        <li>Escolha a ferramenta (Lápis, Borracha, Balde, Linha...) e uma cor no seletor.</li>
+        <li>Clique e arraste no quadro para desenhar. O botão direito apaga.</li>
+        <li>Para sombras, baixe a <b>Opacidade</b> da cor (teclas , e .). Ela mistura com o que já está pintado.</li>
+        <li>Guarde cores que você repete em <b>Paleta</b> (+ Salvar cor atual).</li>
+        <li>Use <b>Camadas</b> para separar contorno, cor e sombra. Dá para ocultar cada uma.</li>
+        <li>Carregue uma <b>Imagem de referência</b> para desenhar por cima dela, com opacidade ajustável.</li>
+        <li>Espelho e Simetria ajudam a desenhar personagens. Ctrl+Z desfaz, Ctrl+X refaz.</li>
+        <li>Quando terminar, clique em <b>Baixar nativo</b>. O PNG sai transparente e no tamanho real, pronto para o Godot.</li>
+      </ol>
+    </details>
+
+    <details class="panel tutorial" data-tab="anim" data-key="anim" open>
+      <summary>Como usar · Animação</summary>
+      <ol>
+        <li>Desenhe o primeiro frame. Você pode desenhar no quadro em qualquer aba.</li>
+        <li>Clique em <b>Duplicar</b> para copiar o frame atual e mexa só no que muda (ou <b>+ Frame</b> para um em branco).</li>
+        <li>Troque de frame pelos números ou com as setas ← →.</li>
+        <li>Clique em <b>Reproduzir</b> (ou P) para ver a animação e ajuste o <b>FPS</b>.</li>
+        <li>Clique em <b>Baixar spritesheet</b>. Sai uma faixa horizontal com todos os frames.</li>
+        <li>No Godot, use um <b>Sprite2D</b> com <b>Hframes</b> igual ao número de frames, ou o AnimatedSprite2D importando a faixa.</li>
+      </ol>
+    </details>
+
+    <div class="panel" data-tab="paint">
+      <p class="sub">Camadas</p>
+      <div id="layerList"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="addLayerBtn">+ Camada</button>
+        <button id="delLayerBtn">Excluir</button>
+        <button id="layerUpBtn">▲</button>
+        <button id="layerDownBtn">▼</button>
+      </div>
+      <p class="hint">Clique para selecionar · duplo clique para renomear</p>
+    </div>
+
+    <div class="panel" data-tab="paint">
       <p class="sub">Atalhos</p>
       <div class="shortcuts">
         <kbd>B</kbd><span>Lápis</span>
@@ -224,6 +288,7 @@ footer{font-size:11px; color:var(--sub); text-align:center}
         <kbd>[ ]</kbd><span>Zoom</span>
         <kbd>, .</kbd><span>Opacidade da cor − / +</span>
         <kbd>- =</kbd><span>Opacidade da referência − / +</span>
+        <kbd>A</kbd><span>Ir para a aba Animação</span>
         <kbd>'</kbd><span>Alternar grade</span>
         <kbd>Clique direito</kbd><span>Apaga direto</span>
         <kbd>Scroll no canvas</kbd><span>Zoom</span>
@@ -232,7 +297,50 @@ footer{font-size:11px; color:var(--sub); text-align:center}
   </div>
 
   <div class="right">
-    <div class="panel">
+    <div class="panel" data-tab="anim">
+      <p class="sub">Frames</p>
+      <div id="frameStrip" class="row"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="addFrameBtn">+ Frame</button>
+        <button id="dupFrameBtn">Duplicar</button>
+        <button id="delFrameBtn">Excluir</button>
+      </div>
+    </div>
+
+    <div class="panel" data-tab="anim">
+      <p class="sub">Pré-visualização</p>
+      <div class="row" style="gap:18px;align-items:center">
+        <canvas id="previewCanvas" width="16" height="16"></canvas>
+        <div class="row" style="flex-direction:column;align-items:flex-start;gap:10px">
+          <button id="playBtn">Reproduzir</button>
+          <div class="row">
+            <span class="sub" style="margin:0">FPS</span>
+            <input type="number" id="fpsInput" min="1" max="30" value="8" style="width:60px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:7px 6px;font-size:13px">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-tab="anim">
+      <p class="sub">Exportar animação</p>
+      <div class="row">
+        <button id="exportSheet" class="wide">Baixar spritesheet (todos os frames)</button>
+      </div>
+      <p class="hint">Uma faixa horizontal, com um frame ao lado do outro.</p>
+    </div>
+
+    <div class="panel" data-tab="anim">
+      <p class="sub">Atalhos</p>
+      <div class="shortcuts">
+        <kbd>← →</kbd><span>Frame anterior / próximo</span>
+        <kbd>P</kbd><span>Reproduzir / pausar</span>
+        <kbd>A</kbd><span>Alternar aba</span>
+        <kbd>Ctrl+Z</kbd><span>Desfazer</span>
+        <kbd>Ctrl+X</kbd><span>Refazer</span>
+      </div>
+    </div>
+
+    <div class="panel" data-tab="paint">
       <p class="sub">Ferramenta</p>
       <div class="row">
         <button id="t-pencil" class="active">Lápis (B)</button>
@@ -251,7 +359,7 @@ footer{font-size:11px; color:var(--sub); text-align:center}
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" data-tab="paint">
       <p class="sub">Simetria</p>
       <div class="row">
         <button id="symX">Espelho horizontal</button>
@@ -259,7 +367,7 @@ footer{font-size:11px; color:var(--sub); text-align:center}
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" data-tab="paint">
       <p class="sub">Ações</p>
       <div class="row">
         <button id="undoBtn">Desfazer</button>
@@ -272,7 +380,7 @@ footer{font-size:11px; color:var(--sub); text-align:center}
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" data-tab="paint">
       <p class="sub">Cor</p>
       <div class="row" style="align-items:flex-start">
         <div class="picker-wrap">
@@ -296,7 +404,19 @@ footer{font-size:11px; color:var(--sub); text-align:center}
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" data-tab="paint">
+      <p class="sub">Paleta</p>
+      <div class="row" style="margin-bottom:10px">
+        <button id="saveColorBtn">+ Salvar cor atual</button>
+        <button id="clearPaletteBtn">Limpar</button>
+      </div>
+      <div id="paletteSwatches" class="swatch-row"></div>
+      <p class="sub" style="margin-top:14px">Recentes</p>
+      <div id="recentSwatches" class="swatch-row"></div>
+      <p class="hint">Clique aplica a cor · clique direito remove da paleta</p>
+    </div>
+
+    <div class="panel" data-tab="paint">
       <p class="sub">Imagem de referência</p>
       <div class="row">
         <label for="refFile" class="filebtn">Carregar imagem</label>
@@ -319,7 +439,7 @@ footer{font-size:11px; color:var(--sub); text-align:center}
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" data-tab="paint">
       <p class="sub">Abrir imagem para editar</p>
       <div class="row">
         <label for="importFile" class="filebtn">Importar como sprite</label>
@@ -327,7 +447,7 @@ footer{font-size:11px; color:var(--sub); text-align:center}
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" data-tab="paint">
       <p class="sub">Exportar</p>
       <div class="row">
         <button id="exportNative" class="wide">Baixar nativo</button>
@@ -347,7 +467,15 @@ let cell = 32;
 const ZOOM_MIN = 4, ZOOM_MAX = 56;
 function defaultCell(n){ return n<=16 ? 32 : n<=32 ? 16 : 8; }
 let showGrid = true;
-let px = new Array(N*N).fill(null);
+let layers = [{name:'Camada 1', visible:true}];
+let frames = [{cels:[new Array(N*N).fill(null)]}]; // cada frame tem 1 "cel" (array de pixels) por camada
+let curFrame = 0, curLayer = 0, fps = 8;
+let px = frames[0].cels[0]; // pixels da camada/frame ativos
+function blankDoc(){
+  layers = [{name:'Camada 1', visible:true}];
+  frames = [{cels:[new Array(N*N).fill(null)]}];
+  curFrame = 0; curLayer = 0; px = frames[0].cels[0];
+}
 let history = [];
 let redoStack = [];
 let tool = 'pencil';
@@ -399,7 +527,8 @@ function createNewAsset(name, newN){
   assetName = name;
   history = []; redoStack = [];
   cell = defaultCell(N);
-  px = new Array(N*N).fill(null);
+  blankDoc();
+  renderLayers(); renderFrames();
   updateAssetLabel();
   setCanvasSize();
   saveState();
@@ -432,14 +561,23 @@ document.getElementById('confirmNewAsset').onclick = ()=>{
   modal.classList.remove('open');
 };
 
-function draw(){
-  ctx.clearRect(0,0,grid.width,grid.height);
-  for(let y=0;y<N;y++){
-    for(let x=0;x<N;x++){
-      const c = px[y*N+x];
-      if(c){ ctx.fillStyle = c; ctx.fillRect(x*cell,y*cell,cell,cell); }
+function paintFrame(g, fi, s){
+  for(let l=0;l<layers.length;l++){
+    if(!layers[l].visible) continue;
+    const cel = (fi===curFrame && l===curLayer) ? px : frames[fi].cels[l];
+    for(let y=0;y<N;y++){
+      for(let x=0;x<N;x++){
+        const col = cel[y*N+x];
+        if(col){ g.fillStyle = col; g.fillRect(x*s,y*s,s,s); }
+      }
     }
   }
+}
+function draw(){
+  frames[curFrame].cels[curLayer] = px; // mantém o cel ativo sincronizado
+  ctx.clearRect(0,0,grid.width,grid.height);
+  paintFrame(ctx, curFrame, cell);
+  if(!playing) updatePreview();
   if(showGrid){
     ctx.strokeStyle = 'rgba(120,120,120,.35)';
     ctx.lineWidth = 1;
@@ -615,7 +753,10 @@ window.addEventListener('mouseup', ()=>{
   if(painting && SHAPE_TOOLS.includes(tool) && shapePreview){
     commitShapePoints(shapePreview);
   }
-  if(painting) saveState();
+  if(painting){
+    if(!forceErase && ['pencil','fill','line','rect','ellipse'].includes(tool)) addRecent(currentColor);
+    saveState();
+  }
   painting=false; forceErase=false; dragStart=null; shapePreview=null;
   draw();
 });
@@ -697,6 +838,10 @@ window.addEventListener('keydown', e=>{
   if(k==='h'){ e.shiftKey ? doFlipV() : doFlipH(); return; }
   if(k==='t'){ doRotate(); return; }
   if(k==='`' || k==="'"){ doGridToggle(); return; }
+  if(k==='arrowleft'){ e.preventDefault(); setFrame(curFrame-1); return; }
+  if(k==='arrowright'){ e.preventDefault(); setFrame(curFrame+1); return; }
+  if(k==='p'){ togglePlay(); return; }
+  if(k==='a'){ setView(document.body.dataset.view==='paint' ? 'anim' : 'paint'); return; }
   if(k==='-'){ bumpRef(-5); return; }
   if(k==='='||k==='+'){ bumpRef(5); return; }
   if(k===','){ bumpAlpha(-10); return; }
@@ -940,20 +1085,24 @@ const SAVE_KEY_PREFIX = 'pixelEditor_state_';
 const LAST_ASSET_KEY = 'pixelEditor_lastAsset';
 function saveState(){
   try{
-    localStorage.setItem(SAVE_KEY_PREFIX+N, JSON.stringify({name: assetName, px}));
+    localStorage.setItem(SAVE_KEY_PREFIX+N, JSON.stringify({name: assetName, layers, frames, fps}));
     localStorage.setItem(LAST_ASSET_KEY, String(N));
   }catch(e){}
 }
 function loadState(){
   try{
     const raw = localStorage.getItem(SAVE_KEY_PREFIX+N);
-    if(raw){
-      const data = JSON.parse(raw);
-      if(data && Array.isArray(data.px) && data.px.length===N*N){
-        px = data.px;
-        assetName = data.name || '';
-      }
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    assetName = data.name || '';
+    if(data.frames && data.layers){
+      const ok = data.frames.length>0 && data.layers.length>0 &&
+        data.frames.every(f=>f.cels && f.cels.length===data.layers.length && f.cels.every(x=>Array.isArray(x) && x.length===N*N));
+      if(ok){ layers=data.layers; frames=data.frames; fps=data.fps||8; }
+    } else if(Array.isArray(data.px) && data.px.length===N*N){
+      layers=[{name:'Camada 1', visible:true}]; frames=[{cels:[data.px]}]; // formato antigo
     }
+    curFrame=0; curLayer=0; px=frames[0].cels[0];
   }catch(e){}
 }
 (function initAsset(){
@@ -962,23 +1111,13 @@ function loadState(){
     if([16,32,64].includes(lastN)) N = lastN;
   }catch(e){}
   cell = defaultCell(N);
-  px = new Array(N*N).fill(null);
+  blankDoc();
   loadState();
   updateAssetLabel();
 })();
 
-async function exportPNG(scale, filename){
-  const out = document.createElement('canvas');
-  out.width = N*scale; out.height = N*scale;
-  const octx = out.getContext('2d');
-  octx.imageSmoothingEnabled = false;
-  for(let y=0;y<N;y++){
-    for(let x=0;x<N;x++){
-      const c = px[y*N+x];
-      if(c){ octx.fillStyle = c; octx.fillRect(x*scale,y*scale,scale,scale); }
-    }
-  }
-  out.toBlob(async (blob)=>{
+function saveCanvasPNG(canvas, filename){
+  canvas.toBlob(async (blob)=>{
     let downloads = null;
     try{ downloads = await claude.use('downloads'); }catch(e){}
     if(downloads){
@@ -991,9 +1130,228 @@ async function exportPNG(scale, filename){
     setTimeout(()=>URL.revokeObjectURL(url), 2000);
   }, 'image/png');
 }
+async function exportPNG(scale, filename){
+  const out = document.createElement('canvas');
+  out.width = N*scale; out.height = N*scale;
+  const octx = out.getContext('2d');
+  octx.imageSmoothingEnabled = false;
+  paintFrame(octx, curFrame, scale);
+  saveCanvasPNG(out, filename);
+}
 function exportBaseName(){ return (assetName || 'sprite').replace(/[^a-z0-9_\-]+/gi,'_'); }
 document.getElementById('exportNative').onclick=()=>exportPNG(1,`${exportBaseName()}_${N}x${N}.png`);
 document.getElementById('exportBig').onclick=()=>exportPNG(8,`${exportBaseName()}_${N}x${N}_x8.png`);
+
+/* ---- paleta ---- */
+const PAL_KEY = 'pixelEditor_palette', REC_KEY = 'pixelEditor_recent';
+let palette = [], recent = [];
+try{
+  palette = JSON.parse(localStorage.getItem(PAL_KEY)||'[]');
+  recent = JSON.parse(localStorage.getItem(REC_KEY)||'[]');
+}catch(e){}
+function savePalette(){
+  try{ localStorage.setItem(PAL_KEY, JSON.stringify(palette)); localStorage.setItem(REC_KEY, JSON.stringify(recent)); }catch(e){}
+}
+function setColorFromHex(col){
+  const cc = parseColor(col);
+  colorAlpha = Math.max(5, Math.round(cc.a*100));
+  const hsv = hexToHsv(col); hue=hsv.h; sat=hsv.s; val=hsv.v;
+  refreshPicker();
+}
+function makeSwatch(col, onRemove){
+  const s = document.createElement('div');
+  s.className = 'swatch'; s.title = col;
+  s.style.background = `linear-gradient(${col},${col}), repeating-conic-gradient(#bbb 0% 25%, #fff 0% 50%) 50% / 8px 8px`;
+  s.onclick = ()=>setColorFromHex(col);
+  s.oncontextmenu = (e)=>{ e.preventDefault(); if(onRemove) onRemove(); };
+  return s;
+}
+function renderSwatches(){
+  const pe = document.getElementById('paletteSwatches'), re = document.getElementById('recentSwatches');
+  pe.innerHTML = ''; re.innerHTML = '';
+  palette.forEach((col,i)=>pe.appendChild(makeSwatch(col, ()=>{ palette.splice(i,1); renderSwatches(); savePalette(); })));
+  recent.forEach(col=>re.appendChild(makeSwatch(col, null)));
+}
+function addRecent(col){
+  recent = recent.filter(x=>x!==col);
+  recent.unshift(col);
+  recent = recent.slice(0,14);
+  renderSwatches(); savePalette();
+}
+document.getElementById('saveColorBtn').onclick = ()=>{
+  if(!palette.includes(currentColor)) palette.push(currentColor);
+  renderSwatches(); savePalette();
+};
+document.getElementById('clearPaletteBtn').onclick = ()=>{
+  if(palette.length && !confirm('Remover todas as cores salvas da paleta?')) return;
+  palette = []; renderSwatches(); savePalette();
+};
+
+/* ---- camadas ---- */
+const layerList = document.getElementById('layerList');
+function afterStructureChange(){
+  history = []; redoStack = [];
+  px = frames[curFrame].cels[curLayer];
+  renderLayers(); renderFrames(); draw(); saveState();
+}
+function renderLayers(){
+  updateStatus();
+  layerList.innerHTML = '';
+  for(let i=layers.length-1;i>=0;i--){
+    const L = layers[i];
+    const row = document.createElement('div');
+    row.className = 'layer-row' + (i===curLayer?' active':'') + (L.visible?'':' hidden-layer');
+    const eye = document.createElement('button');
+    eye.textContent = L.visible ? 'Visível' : 'Oculta';
+    eye.onclick = (e)=>{ e.stopPropagation(); L.visible = !L.visible; renderLayers(); draw(); saveState(); };
+    const name = document.createElement('span');
+    name.className = 'lname'; name.textContent = L.name;
+    row.onclick = ()=>selectLayer(i);
+    row.ondblclick = ()=>{
+      const n = prompt('Nome da camada:', L.name);
+      if(n && n.trim()){ L.name = n.trim(); renderLayers(); saveState(); }
+    };
+    row.appendChild(name); row.appendChild(eye);
+    layerList.appendChild(row);
+  }
+}
+function selectLayer(i){
+  frames[curFrame].cels[curLayer] = px;
+  curLayer = i; px = frames[curFrame].cels[curLayer];
+  history = []; redoStack = [];
+  renderLayers(); draw();
+}
+document.getElementById('addLayerBtn').onclick = ()=>{
+  frames[curFrame].cels[curLayer] = px;
+  const at = curLayer+1;
+  layers.splice(at, 0, {name:'Camada '+(layers.length+1), visible:true});
+  frames.forEach(f=>f.cels.splice(at, 0, new Array(N*N).fill(null)));
+  curLayer = at;
+  afterStructureChange();
+};
+document.getElementById('delLayerBtn').onclick = ()=>{
+  if(layers.length<2){ alert('O asset precisa ter pelo menos uma camada.'); return; }
+  if(!confirm('Excluir a camada "'+layers[curLayer].name+'" em todos os frames?')) return;
+  frames[curFrame].cels[curLayer] = px;
+  layers.splice(curLayer,1);
+  frames.forEach(f=>f.cels.splice(curLayer,1));
+  curLayer = Math.min(curLayer, layers.length-1);
+  afterStructureChange();
+};
+function moveLayer(dir){
+  const j = curLayer+dir;
+  if(j<0 || j>=layers.length) return;
+  frames[curFrame].cels[curLayer] = px;
+  [layers[curLayer], layers[j]] = [layers[j], layers[curLayer]];
+  frames.forEach(f=>{ [f.cels[curLayer], f.cels[j]] = [f.cels[j], f.cels[curLayer]]; });
+  curLayer = j;
+  afterStructureChange();
+}
+document.getElementById('layerUpBtn').onclick = ()=>moveLayer(1);
+document.getElementById('layerDownBtn').onclick = ()=>moveLayer(-1);
+
+/* ---- frames / animação ---- */
+const frameStrip = document.getElementById('frameStrip');
+const previewCanvas = document.getElementById('previewCanvas');
+const playBtn = document.getElementById('playBtn');
+const fpsInput = document.getElementById('fpsInput');
+let playing = false, playIdx = 0, playTimer = null;
+fpsInput.value = fps;
+
+function renderFrames(){
+  updateStatus();
+  frameStrip.innerHTML = '';
+  frames.forEach((f,i)=>{
+    const b = document.createElement('button');
+    b.textContent = String(i+1);
+    b.style.minWidth = '36px';
+    b.classList.toggle('active', i===curFrame);
+    b.onclick = ()=>setFrame(i);
+    frameStrip.appendChild(b);
+  });
+}
+function setFrame(i){
+  if(i<0 || i>=frames.length || i===curFrame) return;
+  frames[curFrame].cels[curLayer] = px;
+  curFrame = i; px = frames[curFrame].cels[curLayer];
+  history = []; redoStack = [];
+  renderFrames(); draw();
+}
+function renderPreview(fi){
+  previewCanvas.width = N; previewCanvas.height = N;
+  const pc = previewCanvas.getContext('2d');
+  pc.clearRect(0,0,N,N);
+  paintFrame(pc, fi, 1);
+}
+function updatePreview(){ renderPreview(curFrame); }
+
+document.getElementById('addFrameBtn').onclick = ()=>{
+  frames[curFrame].cels[curLayer] = px;
+  frames.splice(curFrame+1, 0, {cels: layers.map(()=>new Array(N*N).fill(null))});
+  curFrame++;
+  afterStructureChange();
+};
+document.getElementById('dupFrameBtn').onclick = ()=>{
+  frames[curFrame].cels[curLayer] = px;
+  frames.splice(curFrame+1, 0, {cels: frames[curFrame].cels.map(cel=>cel.slice())});
+  curFrame++;
+  afterStructureChange();
+};
+document.getElementById('delFrameBtn').onclick = ()=>{
+  if(frames.length<2){ alert('O asset precisa ter pelo menos um frame.'); return; }
+  if(!confirm('Excluir o frame '+(curFrame+1)+'?')) return;
+  frames.splice(curFrame,1);
+  curFrame = Math.min(curFrame, frames.length-1);
+  afterStructureChange();
+};
+function togglePlay(){
+  if(playing){
+    clearInterval(playTimer); playing = false; playBtn.textContent = 'Reproduzir'; updatePreview(); return;
+  }
+  if(frames.length<2) return;
+  playing = true; playIdx = curFrame; playBtn.textContent = 'Pausar';
+  playTimer = setInterval(()=>{ playIdx = (playIdx+1) % frames.length; renderPreview(playIdx); }, 1000/fps);
+}
+playBtn.onclick = togglePlay;
+fpsInput.onchange = ()=>{
+  fps = Math.min(30, Math.max(1, parseInt(fpsInput.value)||8));
+  fpsInput.value = fps;
+  if(playing){ togglePlay(); togglePlay(); }
+  saveState();
+};
+document.getElementById('exportSheet').onclick = ()=>{
+  frames[curFrame].cels[curLayer] = px;
+  const out = document.createElement('canvas');
+  out.width = N*frames.length; out.height = N;
+  const g = out.getContext('2d');
+  frames.forEach((f,i)=>{ g.save(); g.translate(i*N,0); paintFrame(g, i, 1); g.restore(); });
+  saveCanvasPNG(out, `${exportBaseName()}_sheet_${N}x${N}_${frames.length}f.png`);
+};
+
+/* ---- abas, status e tutorial ---- */
+const docStatus = document.getElementById('docStatus');
+function updateStatus(){
+  if(!docStatus) return;
+  docStatus.textContent = `Frame ${curFrame+1}/${frames.length} · Camada: ${layers[curLayer].name}`;
+}
+function setView(v){
+  document.body.dataset.view = v;
+  document.querySelectorAll('#tabs .tab').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  if(v==='paint' && playing) togglePlay();
+  try{ localStorage.setItem('pixelEditor_view', v); }catch(e){}
+}
+document.querySelectorAll('#tabs .tab').forEach(b=>{ b.onclick = ()=>setView(b.dataset.view); });
+document.querySelectorAll('details.tutorial').forEach(d=>{
+  try{ if(localStorage.getItem('pixelEditor_tut_'+d.dataset.key)==='closed') d.open = false; }catch(e){}
+  d.addEventListener('toggle', ()=>{
+    try{ localStorage.setItem('pixelEditor_tut_'+d.dataset.key, d.open ? 'open' : 'closed'); }catch(e){}
+  });
+});
+
+renderSwatches();
+renderLayers();
+renderFrames();
+setView('paint');
 
 setCanvasSize();
 
